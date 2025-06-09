@@ -10,7 +10,6 @@
   <div class="container" id="form-container">
     <h1>Career Journey Assessment</h1>
     <form id="career-form"></form>
-    <!-- Make sure this is a button, not a submit input! -->
     <button type="button" id="submit-btn" class="btn">Generate Action Items</button>
   </div>
 
@@ -25,7 +24,9 @@
     <button type="button" id="download-btn" class="btn">Download PDF</button>
   </div>
 
-  <!-- Defer so it runs after DOM is parsed -->
+  <!-- 1) Load your config -->
+  <script defer src="js/config.js"></script>
+  <!-- 2) Then run the builder -->
   <script defer src="js/script.js"></script>
 </body>
 </html>

@@ -10,7 +10,8 @@
   <div class="container" id="form-container">
     <h1>Career Journey Assessment</h1>
     <form id="career-form"></form>
-    <button id="submit-btn" class="btn">Generate Action Items</button>
+    <!-- Make sure this is a button, not a submit input! -->
+    <button type="button" id="submit-btn" class="btn">Generate Action Items</button>
   </div>
 
   <div class="container hidden" id="loading-container">
@@ -21,9 +22,10 @@
   <div class="container hidden" id="results-container">
     <h2>Your Action Plan</h2>
     <ul id="results-list"></ul>
-    <button id="download-btn" class="btn">Download PDF</button>
+    <button type="button" id="download-btn" class="btn">Download PDF</button>
   </div>
 
-  <script src="js/script.js"></script>
+  <!-- Defer so it runs after DOM is parsed -->
+  <script defer src="js/script.js"></script>
 </body>
 </html>

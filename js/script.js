@@ -2,9 +2,9 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
-  const xOffset    = textPosition?.x ?? 40;
-  const yOffset    = textPosition?.y ?? 100;
-  const lineHeight = textPosition?.lineHeight ?? 20;
+  const xOffset    = textPosition && typeof textPosition.x === 'number' ? textPosition.x : 40;
+  const yOffset    = textPosition && typeof textPosition.y === 'number' ? textPosition.y : 100;
+  const lineHeight = textPosition && typeof textPosition.lineHeight === 'number' ? textPosition.lineHeight : 20;
   const urlRegex   = /(https?:\/\/[^\s]+)/g;
 
   const formCont    = document.getElementById('form-container');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadBtn = document.getElementById('download-btn');
   const restartBtn  = document.getElementById('restart-btn');
 
-  // INITIAL STATE
+  // INITIAL STATE: show form, hide spinner & results
   formCont.classList.remove('hidden');
   loadCont.classList.add('hidden');
   resCont.classList.add('hidden');
@@ -48,22 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const sel = formEl.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          if (opt?.actions) actions.push(...opt.actions);
+          if (opt && Array.isArray(opt.actions)) actions.push(...opt.actions);
         }
       }
     });
 
-    // TOGGLE VIEWS: show spinner
+    // SHOW SPINNER
     formCont.classList.add('hidden');
     resCont.classList.add('hidden');
     loadCont.classList.remove('hidden');
 
     setTimeout(() => {
-      // HIDE SPINNER, SHOW LIST
+      // HIDE SPINNER, SHOW RESULTS
       loadCont.classList.add('hidden');
       resList.innerHTML = actions.map(a => {
-        // wrap any URL in <a> tags
-        const html = a.replace(urlRegex, '<a href="$&" target="_blank">$&</a>');
+        const html = a.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
         return `<li>${html}</li>`;
       }).join('');
       resCont.classList.remove('hidden');
@@ -87,23 +86,18 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(blob);
       }))
       .then(dataUrl => {
-        // Draw background
         doc.addImage(
           dataUrl, 'PNG',
           0, 0,
           doc.internal.pageSize.getWidth(),
           doc.internal.pageSize.getHeight()
         );
-        // Overlay items with clickable links
         Array.from(resList.querySelectorAll('li')).forEach((li, idx) => {
           const text = li.textContent;
           const y = yOffset + idx * lineHeight;
           const match = text.match(urlRegex);
           if (match) {
-            // draw full text but make URL clickable
-            doc.text(text, xOffset, y, {
-              link: match[0]
-            });
+            doc.text(text, xOffset, y, { link: match[0] });
           } else {
             doc.text(text, xOffset, y);
           }

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Career Journey Form</title>
   <link rel="stylesheet" href="css/style.css" />
-  <!-- Include jsPDF UMD build so we don’t have to dynamic-import -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -15,7 +14,6 @@
     <button type="button" id="submit-btn" class="btn">Generate Action Items</button>
   </div>
 
-  <!-- Full-screen overlay for loading -->
   <div id="loading-container" class="hidden">
     <div class="spinner"></div>
     <p>Preparing your personalized plan...</p>
@@ -25,6 +23,7 @@
     <h2>Your Action Plan</h2>
     <ul id="results-list"></ul>
     <button type="button" id="download-btn" class="btn">Download PDF</button>
+    <button type="button" id="restart-btn" class="btn">Restart</button>
   </div>
 
   <script defer src="js/config.js"></script>

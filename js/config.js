@@ -4,8 +4,8 @@ window.CONFIG = {
   textPosition: {
     x: 370,         // X coordinate in pixels
     y: 1280,        // Y coordinate in pixels
-    lineHeight: 24, // Pixel gap between lines
-    fontSize: 14    // Point size for PDF text
+    lineHeight: 24, // Vertical spacing between lines
+    fontSize: 14    // Font size (points) for PDF text
   },
   questions: [
     {

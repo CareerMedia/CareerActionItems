@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+(function() {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
   const xOffset = textPosition?.x ?? 40;
   const yOffset = textPosition?.y ?? 100;
@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const resList     = document.getElementById('results-list');
   const downloadBtn = document.getElementById('download-btn');
 
-  // Initial visibility: hide spinner & results, show form
-  formCont.classList.remove('hidden');
-  loadCont.classList.add('hidden');
-  resCont.classList.add('hidden');
+  // Initial state: hide spinner & results, show form
+  if (loadCont) loadCont.style.display = 'none';
+  if (resCont) resCont.style.display = 'none';
+  if (formCont) formCont.style.display = 'block';
 
   // Build form fields
   questions.forEach(q => {
@@ -49,16 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Show spinner
-    formCont.classList.add('hidden');
-    resCont.classList.add('hidden');
-    loadCont.classList.remove('hidden');
+    // Show spinner overlay
+    formCont.style.display = 'none';
+    resCont.style.display = 'none';
+    loadCont.style.display = 'flex';
 
-    // After delay, show results
+    // After delay, hide spinner & show results
     setTimeout(() => {
-      loadCont.classList.add('hidden');
+      loadCont.style.display = 'none';
       resList.innerHTML = actions.map(a => `<li>${a}</li>`).join('');
-      resCont.classList.remove('hidden');
+      resCont.style.display = 'block';
     }, 800);
   });
 
@@ -67,8 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'px', format: 'a4' });
-
-      // Fetch and convert template to DataURL
       const resp = await fetch(templateImageUrl);
       if (!resp.ok) throw new Error(`Template fetch failed: ${resp.status}`);
       const blob = await resp.blob();
@@ -87,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.internal.pageSize.getHeight()
       );
 
-      // Draw actions at configured coordinates
+      // Overlay actions at specified coords
       const items = Array.from(resList.querySelectorAll('li')).map(li => li.textContent);
       items.forEach((txt, i) => {
         doc.text(txt, xOffset, yOffset + i * lineHeight);
@@ -99,4 +97,5 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Error generating PDF. See console for details.');
     }
   });
-});
+})();
+```

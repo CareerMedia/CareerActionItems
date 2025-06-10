@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const lineHeight = (textPosition && textPosition.lineHeight) || 20;
   const urlRegex   = /(https?:\/\/[^\s]+)/g;
 
-  // Grab all our elements
   const formContainer    = document.getElementById('form-container');
   const loadingContainer = document.getElementById('loading-container');
   const resultsContainer = document.getElementById('results-container');
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadingContainer.style.display = 'none';
   resultsContainer.style.display = 'none';
 
-  // BUILD FORM
+  // BUILD FORM FIELDS
   questions.forEach(q => {
     let wrapper;
     if (q.type === 'text') {
@@ -43,28 +42,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // GENERATE ACTION ITEMS
   submitBtn.addEventListener('click', function() {
-    // Collect selected actions
     const actions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
         const sel = formEl.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          if (opt.actions) actions.push(...opt.actions);
+          if (opt && opt.actions) actions.push(...opt.actions);
         }
       }
     });
 
-    // Toggle views: hide form/results, show spinner
+    // SHOW SPINNER
     formContainer.style.display    = 'none';
     resultsContainer.style.display = 'none';
     loadingContainer.style.display = 'flex';
 
     setTimeout(function() {
-      // After delay: hide spinner, populate & show results
+      // HIDE SPINNER, SHOW RESULTS
       loadingContainer.style.display = 'none';
       resultsList.innerHTML = actions.map(item => {
-        // Wrap any http(s) URL in <a>
         const html = item.replace(urlRegex, function(url) {
           return `<a href="${url}" target="_blank">${url}</a>`;
         });
@@ -80,31 +77,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const doc = new jsPDF({ unit: 'px', format: 'a4' });
 
     fetch(templateImageUrl)
-      .then(res => {
-        if (!res.ok) throw new Error(`Template fetch failed: ${res.status}`);
-        return res.blob();
+      .then(function(resp) {
+        if (!resp.ok) throw new Error(`Template fetch failed: ${resp.status}`);
+        return resp.blob();
       })
-      .then(blob => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = e => reject(e);
-        reader.readAsDataURL(blob);
-      }))
-      .then(dataUrl => {
-        // Draw the PDF background
+      .then(function(blob) {
+        return new Promise(function(resolve, reject) {
+          const reader = new FileReader();
+          reader.onload = function() { resolve(reader.result); };
+          reader.onerror = function(e) { reject(e); };
+          reader.readAsDataURL(blob);
+        });
+      })
+      .then(function(dataUrl) {
         doc.addImage(
           dataUrl, 'PNG',
           0, 0,
           doc.internal.pageSize.getWidth(),
           doc.internal.pageSize.getHeight()
         );
-        // Overlay action items with clickable PDF links
-        Array.from(resultsList.querySelectorAll('li')).forEach((li, idx) => {
+        Array.from(resultsList.querySelectorAll('li')).forEach(function(li, idx) {
           const text = li.textContent;
           const yPos = yOffset + idx * lineHeight;
           const match = text.match(urlRegex);
           if (match) {
-            // Draw text and make URL clickable
             doc.text(text, xOffset, yPos, { link: match[0] });
           } else {
             doc.text(text, xOffset, yPos);
@@ -112,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         doc.save('action-plan.pdf');
       })
-      .catch(err => {
+      .catch(function(err) {
         console.error('PDF generation error:', err);
         alert('Error generating PDF. See console for details.');
       });

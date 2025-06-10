@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formCont.classList.add('hidden');
     loadCont.classList.remove('hidden');
+
     setTimeout(() => {
       loadCont.classList.add('hidden');
       resList.innerHTML = actions.map(a => `<li>${a}</li>`).join('');
@@ -51,23 +52,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // PDF download: overlay action items onto your background
   downloadBtn.addEventListener('click', () => {
-    import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js')
-      .then(js => {
-        const { jsPDF } = js.jspdf;
-        const doc = new jsPDF({ unit: 'px', format: 'a4' });
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = templateImageUrl;
-        img.onload = () => {
-          doc.addImage(img, 'PNG', 0, 0,
-            doc.internal.pageSize.getWidth(),
-            doc.internal.pageSize.getHeight()
-          );
-          const items = Array.from(resList.querySelectorAll('li'))
-                             .map(li => li.textContent);
-          items.forEach((txt, i) => doc.text(txt, 40, 100 + i * 20));
-          doc.save('action-plan.pdf');
-        };
-      });
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'px', format: 'a4' });
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = templateImageUrl;
+    img.onload = () => {
+      doc.addImage(
+        img, 'PNG', 0, 0,
+        doc.internal.pageSize.getWidth(),
+        doc.internal.pageSize.getHeight()
+      );
+      const items = Array.from(resList.querySelectorAll('li'))
+                         .map(li => li.textContent);
+      items.forEach((txt, i) =>
+        doc.text(txt, 40, 100 + i * 20)
+      );
+      doc.save('action-plan.pdf');
+    };
   });
 });

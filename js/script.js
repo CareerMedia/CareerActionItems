@@ -1,14 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   const { questions, templateImageUrl } = window.CONFIG;
-  const formEl        = document.getElementById('career-form');
-  const submitBtn     = document.getElementById('submit-btn');
-  const formCont      = document.getElementById('form-container');
-  const loadCont      = document.getElementById('loading-container');
-  const resCont       = document.getElementById('results-container');
-  const resList       = document.getElementById('results-list');
-  const downloadBtn   = document.getElementById('download-btn');
+  const formEl      = document.getElementById('career-form');
+  const submitBtn   = document.getElementById('submit-btn');
+  const formCont    = document.getElementById('form-container');
+  const loadCont    = document.getElementById('loading-container');
+  const resCont     = document.getElementById('results-container');
+  const resList     = document.getElementById('results-list');
+  const downloadBtn = document.getElementById('download-btn');
 
-  // Build form fields
+  // Build form fields (unchanged)
   questions.forEach(q => {
     let wrapper;
     if (q.type === 'text') {
@@ -50,25 +50,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 800);
   });
 
-  // PDF download: overlay action items onto your background
-  downloadBtn.addEventListener('click', () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'px', format: 'a4' });
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = templateImageUrl;
-    img.onload = () => {
+  // PDF download: fetch + FileReader → DataURL → addImage
+  downloadBtn.addEventListener('click', async () => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'px', format: 'a4' });
+
+      // Fetch the template
+      console.log('Fetching PDF template:', templateImageUrl);
+      const resp = await fetch(templateImageUrl);
+      if (!resp.ok) throw new Error(`Template fetch failed: ${resp.status}`);
+      const blob = await resp.blob();
+
+      // Convert to DataURL
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload    = () => resolve(reader.result);
+        reader.onerror   = e => reject(e);
+        reader.readAsDataURL(blob);
+      });
+
+      // Draw background
       doc.addImage(
-        img, 'PNG', 0, 0,
+        dataUrl, 'PNG', 
+        0, 0,
         doc.internal.pageSize.getWidth(),
         doc.internal.pageSize.getHeight()
       );
-      const items = Array.from(resList.querySelectorAll('li'))
-                         .map(li => li.textContent);
-      items.forEach((txt, i) =>
-        doc.text(txt, 40, 100 + i * 20)
-      );
+
+      // Draw action items
+      const items = Array.from(resList.querySelectorAll('li')).map(li => li.textContent);
+      items.forEach((txt, i) => {
+        doc.text(txt, 40, 100 + i * 20);
+      });
+
+      // Save
       doc.save('action-plan.pdf');
-    };
+      console.log('PDF generated successfully');
+    } catch (err) {
+      console.error('🛑 PDF generation error:', err);
+      alert('Error generating PDF. See console for details.');
+    }
   });
 });

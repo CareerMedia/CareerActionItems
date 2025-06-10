@@ -2,10 +2,10 @@
 window.CONFIG = {
   templateImageUrl: 'assets/background.png',
   textPosition: {
-    x: 50,         // X coordinate in pixels
-    y: 50,        // Y coordinate in pixels
+    x: 370,         // X coordinate in pixels for PDF text
+    y: 1280,        // Y coordinate in pixels for PDF text
     lineHeight: 24, // Vertical spacing between lines
-    fontSize: 12    // Font size (points) for PDF text
+    fontSize: 14    // Font size (in points) for PDF text
   },
   questions: [
     {

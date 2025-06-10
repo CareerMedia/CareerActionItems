@@ -1,7 +1,12 @@
 // Editable question + logic config
 window.CONFIG = {
   templateImageUrl: 'assets/background.png',
-  textPosition: { x: 370, y: 1280, lineHeight: 24 },
+  textPosition: {
+    x: 370,
+    y: 1280,
+    lineHeight: 24,
+    fontSize: 12      // ← New: sets PDF text size in points
+  },
   questions: [
     {
       id: 'name',

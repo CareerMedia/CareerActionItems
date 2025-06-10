@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Career Journey Form</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="container" id="form-container">
+    <h1>Career Journey Assessment</h1>
+    <form id="career-form"></form>
+    <button type="button" id="submit-btn" class="btn">Generate Action Items</button>
+  </div>
+
+  <div class="container hidden" id="loading-container">
+    <img src="assets/spinner.gif" alt="Loading" class="spinner" />
+    <p style="text-align:center;">Preparing your personalized plan...</p>
+  </div>
+
+  <div class="container hidden" id="results-container">
+    <h2>Your Action Plan</h2>
+    <ul id="results-list"></ul>
+    <button type="button" id="download-btn" class="btn">Download PDF</button>
+  </div>
+
+  <!-- load config first, then logic -->
+  <script defer src="js/config.js"></script>
+  <script defer src="js/script.js"></script>
+</body>
+</html>

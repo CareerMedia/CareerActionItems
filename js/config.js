@@ -2,10 +2,10 @@
 window.CONFIG = {
   templateImageUrl: 'assets/background.png',
   textPosition: {
-    x: 370,
-    y: 1280,
-    lineHeight: 24,
-    fontSize: 12      // ← New: sets PDF text size in points
+    x: 370,         // X coordinate in pixels
+    y: 1280,        // Y coordinate in pixels
+    lineHeight: 24, // Pixel gap between lines
+    fontSize: 14    // Point size for PDF text
   },
   questions: [
     {
@@ -30,7 +30,7 @@ window.CONFIG = {
       options: [
         { value: 'networking', label: 'Networking', actions: ['Enroll in Networking Basics: https://canvas.edu/module/networking'] },
         { value: 'leadership', label: 'Leadership', actions: ['Explore Leadership 101: https://canvas.edu/module/leadership'] },
-        { value: 'technical', label: 'Technical Skills', actions: ['Visit Tech Mastery: https://canvas.edu/module/technical'] }
+        { value: 'technical',  label: 'Technical Skills', actions: ['Visit Tech Mastery: https://canvas.edu/module/technical'] }
       ]
     }
   ]

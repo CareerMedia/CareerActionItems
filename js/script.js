@@ -1,21 +1,21 @@
-(function() {
+document.addEventListener('DOMContentLoaded', () => {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
-  const xOffset = textPosition?.x ?? 40;
-  const yOffset = textPosition?.y ?? 100;
-  const lineHeight = textPosition?.lineHeight ?? 20;
+  const xOffset = textPosition && typeof textPosition.x === 'number' ? textPosition.x : 40;
+  const yOffset = textPosition && typeof textPosition.y === 'number' ? textPosition.y : 100;
+  const lineHeight = textPosition && typeof textPosition.lineHeight === 'number' ? textPosition.lineHeight : 20;
 
-  const formCont    = document.getElementById('form-container');
-  const loadCont    = document.getElementById('loading-container');
-  const resCont     = document.getElementById('results-container');
-  const formEl      = document.getElementById('career-form');
-  const submitBtn   = document.getElementById('submit-btn');
-  const resList     = document.getElementById('results-list');
+  const formCont = document.getElementById('form-container');
+  const loadCont = document.getElementById('loading-container');
+  const resCont = document.getElementById('results-container');
+  const formEl = document.getElementById('career-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const resList = document.getElementById('results-list');
   const downloadBtn = document.getElementById('download-btn');
 
-  // Initial state: hide spinner & results, show form
-  if (loadCont) loadCont.style.display = 'none';
-  if (resCont) resCont.style.display = 'none';
-  if (formCont) formCont.style.display = 'block';
+  // Initial visibility: show form, hide spinner & results
+  formCont.style.display = 'block';
+  loadCont.style.display = 'none';
+  resCont.style.display = 'none';
 
   // Build form fields
   questions.forEach(q => {
@@ -30,13 +30,13 @@
       wrapper = document.createElement('fieldset');
       wrapper.innerHTML = `<legend>${q.label}</legend>` +
         q.options.map(opt =>
-          `<label><input type="radio" name="${q.id}" value="${opt.value}" required> ${opt.label}</label>`
+          `<label><input type="radio" name="${q.id}" value="${opt.value}" required /> ${opt.label}</label>`
         ).join('');
     }
     formEl.appendChild(wrapper);
   });
 
-  // Handle submission
+  // Handle form submission
   submitBtn.addEventListener('click', () => {
     const actions = [];
     questions.forEach(q => {
@@ -44,7 +44,7 @@
         const sel = document.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          actions.push(...opt.actions);
+          if (opt && Array.isArray(opt.actions)) actions.push(...opt.actions);
         }
       }
     });
@@ -54,8 +54,8 @@
     resCont.style.display = 'none';
     loadCont.style.display = 'flex';
 
-    // After delay, hide spinner & show results
     setTimeout(() => {
+      // Hide spinner, show results
       loadCont.style.display = 'none';
       resList.innerHTML = actions.map(a => `<li>${a}</li>`).join('');
       resCont.style.display = 'block';
@@ -63,39 +63,37 @@
   });
 
   // Handle PDF download
-  downloadBtn.addEventListener('click', async () => {
-    try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'px', format: 'a4' });
-      const resp = await fetch(templateImageUrl);
-      if (!resp.ok) throw new Error(`Template fetch failed: ${resp.status}`);
-      const blob = await resp.blob();
-      const dataUrl = await new Promise((resolve, reject) => {
+  downloadBtn.addEventListener('click', () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'px', format: 'a4' });
+
+    fetch(templateImageUrl)
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to fetch template: ${res.status}`);
+        return res.blob();
+      })
+      .then(blob => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.onerror = e => reject(e);
         reader.readAsDataURL(blob);
+      }))
+      .then(dataUrl => {
+        doc.addImage(
+          dataUrl, 'PNG',
+          0, 0,
+          doc.internal.pageSize.getWidth(),
+          doc.internal.pageSize.getHeight()
+        );
+        const items = Array.from(resList.querySelectorAll('li')).map(li => li.textContent);
+        items.forEach((txt, idx) =>
+          doc.text(txt, xOffset, yOffset + idx * lineHeight)
+        );
+        doc.save('action-plan.pdf');
+      })
+      .catch(err => {
+        console.error('PDF generation error:', err);
+        alert('Error generating PDF. See console for details.');
       });
-
-      // Draw background
-      doc.addImage(
-        dataUrl, 'PNG',
-        0, 0,
-        doc.internal.pageSize.getWidth(),
-        doc.internal.pageSize.getHeight()
-      );
-
-      // Overlay actions at specified coords
-      const items = Array.from(resList.querySelectorAll('li')).map(li => li.textContent);
-      items.forEach((txt, i) => {
-        doc.text(txt, xOffset, yOffset + i * lineHeight);
-      });
-
-      doc.save('action-plan.pdf');
-    } catch (err) {
-      console.error('PDF generation error:', err);
-      alert('Error generating PDF. See console for details.');
-    }
   });
-})();
-```
+});

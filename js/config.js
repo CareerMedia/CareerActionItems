@@ -1,6 +1,6 @@
 // Editable question + logic config
 window.CONFIG = {
-  templateImageUrl: 'https://your-wordpress-site.com/path/to/background.png',
+  templateImageUrl: 'assets/background.png',
   questions: [
     {
       id: 'name',

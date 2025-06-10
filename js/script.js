@@ -2,11 +2,13 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
-  const xOffset    = (textPosition && textPosition.x) || 40;
-  const yOffset    = (textPosition && textPosition.y) || 100;
-  const lineHeight = (textPosition && textPosition.lineHeight) || 20;
+  const xOffset    = textPosition.x;
+  const yOffset    = textPosition.y;
+  const lineHeight = textPosition.lineHeight;
+  const fontSize   = textPosition.fontSize;
   const urlRegex   = /(https?:\/\/[^\s]+)/g;
 
+  // Element references
   const formContainer    = document.getElementById('form-container');
   const loadingContainer = document.getElementById('loading-container');
   const resultsContainer = document.getElementById('results-container');
@@ -21,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadingContainer.style.display = 'none';
   resultsContainer.style.display = 'none';
 
-  // BUILD FORM FIELDS
+  // BUILD FORM
   questions.forEach(q => {
     let wrapper;
     if (q.type === 'text') {
@@ -30,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <label for="${q.id}">${q.label}</label>
         <input type="text" id="${q.id}" name="${q.id}" required />
       `;
-    } else if (q.type === 'radio') {
+    } else {
       wrapper = document.createElement('fieldset');
       wrapper.innerHTML = `<legend>${q.label}</legend>` +
         q.options.map(opt =>
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const sel = formEl.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          if (opt && opt.actions) actions.push(...opt.actions);
+          actions.push(...opt.actions);
         }
       }
     });
@@ -61,11 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       // HIDE SPINNER, SHOW RESULTS
       loadingContainer.style.display = 'none';
-      resultsList.innerHTML = actions.map(item => {
-        const html = item.replace(urlRegex, function(url) {
-          return `<a href="${url}" target="_blank">${url}</a>`;
-        });
-        return `<li>${html}</li>`;
+      resultsList.innerHTML = actions.map(a => {
+        return `<li>${a.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`)}</li>`;
       }).join('');
       resultsContainer.style.display = 'block';
     }, 800);
@@ -76,27 +75,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'px', format: 'a4' });
 
+    // Apply configured font size
+    doc.setFontSize(fontSize);
+
     fetch(templateImageUrl)
-      .then(function(resp) {
-        if (!resp.ok) throw new Error(`Template fetch failed: ${resp.status}`);
-        return resp.blob();
+      .then(res => {
+        if (!res.ok) throw new Error(`Template fetch failed: ${res.status}`);
+        return res.blob();
       })
-      .then(function(blob) {
-        return new Promise(function(resolve, reject) {
-          const reader = new FileReader();
-          reader.onload = function() { resolve(reader.result); };
-          reader.onerror = function(e) { reject(e); };
-          reader.readAsDataURL(blob);
-        });
-      })
-      .then(function(dataUrl) {
+      .then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = e => reject(e);
+        reader.readAsDataURL(blob);
+      }))
+      .then(dataUrl => {
+        // Draw background
         doc.addImage(
           dataUrl, 'PNG',
           0, 0,
           doc.internal.pageSize.getWidth(),
           doc.internal.pageSize.getHeight()
         );
-        Array.from(resultsList.querySelectorAll('li')).forEach(function(li, idx) {
+        // Overlay items with clickable PDF links
+        Array.from(resultsList.querySelectorAll('li')).forEach((li, idx) => {
           const text = li.textContent;
           const yPos = yOffset + idx * lineHeight;
           const match = text.match(urlRegex);
@@ -108,13 +110,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         doc.save('action-plan.pdf');
       })
-      .catch(function(err) {
+      .catch(err => {
         console.error('PDF generation error:', err);
-        alert('Error generating PDF. See console for details.');
+        alert('Error generating PDF. Check console for details.');
       });
   });
 
-  // RESTART BUTTON
+  // RESTART
   restartBtn.addEventListener('click', function(e) {
     e.preventDefault();
     window.location.reload();

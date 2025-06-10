@@ -27,42 +27,15 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-h1, h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-form > div, form fieldset {
-  margin-bottom: 1rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
+h1, h2 { text-align: center; margin-bottom: 1rem; }
+form > div, form fieldset { margin-bottom: 1rem; }
+label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
 input[type=text] {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;
 }
-
-fieldset {
-  border: none;
-  padding: 0;
-}
-
-legend {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-fieldset label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
+fieldset { border: none; padding: 0; }
+legend { font-weight: bold; margin-bottom: 0.5rem; }
+fieldset label { display: block; margin-bottom: 0.25rem; }
 
 .btn {
   display: block;
@@ -77,17 +50,13 @@ fieldset label {
   cursor: pointer;
 }
 
-.hidden {
-  display: none;
-}
-
-/* Fullscreen loading overlay */
 #loading-container {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
   background: rgba(255,255,255,0.8);
-  display: flex;
+  /* hidden by default; JS handles display */
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -105,14 +74,7 @@ fieldset label {
   margin-bottom: 1rem;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-ul {
-  padding-left: 1.25rem;
-}
-
-ul li {
-  margin-bottom: 0.5rem;
-}
+ul { padding-left: 1.25rem; }
+ul li { margin-bottom: 0.5rem; }

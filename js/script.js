@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const { questions, templateImageUrl } = window.CONFIG;
+  const { questions, templateImageUrl, textPosition } = window.CONFIG;
+  // Default text coordinates (override in js/config.js using textPosition: { x: ___, y: ___ })
+  const xOffset = (textPosition && textPosition.x) || 40;
+  const yOffset = (textPosition && textPosition.y) || 100;
+  const lineHeight = (textPosition && textPosition.lineHeight) || 20;
+
   const formEl      = document.getElementById('career-form');
   const submitBtn   = document.getElementById('submit-btn');
   const formCont    = document.getElementById('form-container');
@@ -8,7 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const resList     = document.getElementById('results-list');
   const downloadBtn = document.getElementById('download-btn');
 
-  // Build form fields (unchanged)
+  // Ensure correct initial visibility
+  formCont.classList.remove('hidden');
+  loadCont.classList.add('hidden');
+  resCont.classList.add('hidden');
+
+  // Build form fields
   questions.forEach(q => {
     let wrapper;
     if (q.type === 'text') {
@@ -27,8 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
     formEl.appendChild(wrapper);
   });
 
-  // On submit: gather actions, show spinner, show results
+  // Handle form submission
   submitBtn.addEventListener('click', () => {
+    // Collect action items
     const actions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
@@ -40,9 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Toggle views: form -> spinner
     formCont.classList.add('hidden');
+    resCont.classList.add('hidden');
     loadCont.classList.remove('hidden');
 
+    // After delay, show results
     setTimeout(() => {
       loadCont.classList.add('hidden');
       resList.innerHTML = actions.map(a => `<li>${a}</li>`).join('');
@@ -50,45 +64,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 800);
   });
 
-  // PDF download: fetch + FileReader → DataURL → addImage
-  downloadBtn.addEventListener('click', async () => {
+  // Handle PDF download
+  downloadBtn.addEventListener('click', () => {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'px', format: 'a4' });
-
-      // Fetch the template
-      console.log('Fetching PDF template:', templateImageUrl);
-      const resp = await fetch(templateImageUrl);
-      if (!resp.ok) throw new Error(`Template fetch failed: ${resp.status}`);
-      const blob = await resp.blob();
-
-      // Convert to DataURL
-      const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload    = () => resolve(reader.result);
-        reader.onerror   = e => reject(e);
-        reader.readAsDataURL(blob);
-      });
-
-      // Draw background
-      doc.addImage(
-        dataUrl, 'PNG', 
-        0, 0,
-        doc.internal.pageSize.getWidth(),
-        doc.internal.pageSize.getHeight()
-      );
-
-      // Draw action items
-      const items = Array.from(resList.querySelectorAll('li')).map(li => li.textContent);
-      items.forEach((txt, i) => {
-        doc.text(txt, 40, 100 + i * 20);
-      });
-
-      // Save
-      doc.save('action-plan.pdf');
-      console.log('PDF generated successfully');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = templateImageUrl;
+      img.onload = () => {
+        // Draw PDF background
+        doc.addImage(
+          img, 'PNG',
+          0, 0,
+          doc.internal.pageSize.getWidth(),
+          doc.internal.pageSize.getHeight()
+        );
+        // Overlay action items at configured coordinates
+        const items = Array.from(resList.querySelectorAll('li')).map(li => li.textContent);
+        items.forEach((txt, i) => {
+          doc.text(txt, xOffset, yOffset + (i * lineHeight));
+        });
+        doc.save('action-plan.pdf');
+      };
+      img.onerror = e => { throw new Error('Background image load failed'); };
     } catch (err) {
-      console.error('🛑 PDF generation error:', err);
+      console.error('PDF generation error:', err);
       alert('Error generating PDF. See console for details.');
     }
   });

@@ -1,6 +1,7 @@
 // Editable question + logic config
 window.CONFIG = {
   templateImageUrl: 'assets/background.png',
+  textPosition: { x: 50, y: 150, lineHeight: 24 },
   questions: [
     {
       id: 'name',

@@ -1,0 +1,61 @@
+:root {
+  --bg: #f9fafb;
+  --card: #ffffff;
+  --text: #1f2937;
+  --accent: #3b82f6;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem;
+  padding: 2rem;
+  background: var(--card);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+h1, h2 { text-align: center; margin-bottom: 1rem; }
+form > div, form fieldset { margin-bottom: 1rem; }
+label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+input[type=text] {
+  width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;
+}
+fieldset { border: none; padding: 0; }
+legend { font-weight: bold; margin-bottom: 0.5rem; }
+fieldset label { display: block; margin-bottom: 0.25rem; }
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.hidden { display: none; }
+/* spinner (if you prefer CSS over an image) */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 6px solid #ddd;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+ul { padding-left: 1.25rem; }
+ul li { margin-bottom: 0.5rem; }

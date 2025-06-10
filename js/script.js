@@ -1,27 +1,28 @@
 // File: js/script.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
   const xOffset    = (textPosition && textPosition.x) || 40;
   const yOffset    = (textPosition && textPosition.y) || 100;
   const lineHeight = (textPosition && textPosition.lineHeight) || 20;
   const urlRegex   = /(https?:\/\/[^\s]+)/g;
 
-  const formCont    = document.getElementById('form-container');
-  const loadCont    = document.getElementById('loading-container');
-  const resCont     = document.getElementById('results-container');
-  const formEl      = document.getElementById('career-form');
-  const submitBtn   = document.getElementById('submit-btn');
-  const resList     = document.getElementById('results-list');
-  const downloadBtn = document.getElementById('download-btn');
-  const restartBtn  = document.getElementById('restart-btn');
+  // Grab all our elements
+  const formContainer    = document.getElementById('form-container');
+  const loadingContainer = document.getElementById('loading-container');
+  const resultsContainer = document.getElementById('results-container');
+  const formEl           = document.getElementById('career-form');
+  const submitBtn        = document.getElementById('submit-btn');
+  const resultsList      = document.getElementById('results-list');
+  const downloadBtn      = document.getElementById('download-btn');
+  const restartBtn       = document.getElementById('restart-btn');
 
-  // INITIAL STATE: show form, hide spinner & results
-  formCont.classList.remove('hidden');
-  loadCont.classList.add('hidden');
-  resCont.classList.add('hidden');
+  // INITIAL STATE
+  formContainer.style.display    = 'block';
+  loadingContainer.style.display = 'none';
+  resultsContainer.style.display = 'none';
 
-  // BUILD FORM FIELDS
+  // BUILD FORM
   questions.forEach(q => {
     let wrapper;
     if (q.type === 'text') {
@@ -41,37 +42,40 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // GENERATE ACTION ITEMS
-  submitBtn.addEventListener('click', () => {
+  submitBtn.addEventListener('click', function() {
+    // Collect selected actions
     const actions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
         const sel = formEl.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          if (opt && Array.isArray(opt.actions)) actions.push(...opt.actions);
+          if (opt.actions) actions.push(...opt.actions);
         }
       }
     });
 
-    // TOGGLE VIEW: show spinner
-    formCont.classList.add('hidden');
-    resCont.classList.add('hidden');
-    loadCont.classList.remove('hidden');
+    // Toggle views: hide form/results, show spinner
+    formContainer.style.display    = 'none';
+    resultsContainer.style.display = 'none';
+    loadingContainer.style.display = 'flex';
 
-    setTimeout(() => {
-      // HIDE SPINNER, SHOW RESULTS
-      loadCont.classList.add('hidden');
-      resList.innerHTML = actions.map(a => {
-        // Wrap URLs in anchor tags
-        const linked = a.replace(urlRegex, url => `<a href=\"${url}\" target=\"_blank\">${url}</a>`);
-        return `<li>${linked}</li>`;
+    setTimeout(function() {
+      // After delay: hide spinner, populate & show results
+      loadingContainer.style.display = 'none';
+      resultsList.innerHTML = actions.map(item => {
+        // Wrap any http(s) URL in <a>
+        const html = item.replace(urlRegex, function(url) {
+          return `<a href="${url}" target="_blank">${url}</a>`;
+        });
+        return `<li>${html}</li>`;
       }).join('');
-      resCont.classList.remove('hidden');
+      resultsContainer.style.display = 'block';
     }, 800);
   });
 
   // DOWNLOAD PDF
-  downloadBtn.addEventListener('click', () => {
+  downloadBtn.addEventListener('click', function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'px', format: 'a4' });
 
@@ -87,22 +91,23 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(blob);
       }))
       .then(dataUrl => {
-        // Draw background
+        // Draw the PDF background
         doc.addImage(
           dataUrl, 'PNG',
           0, 0,
           doc.internal.pageSize.getWidth(),
           doc.internal.pageSize.getHeight()
         );
-        // Overlay action items with clickable link in PDF
-        Array.from(resList.querySelectorAll('li')).forEach((li, idx) => {
+        // Overlay action items with clickable PDF links
+        Array.from(resultsList.querySelectorAll('li')).forEach((li, idx) => {
           const text = li.textContent;
-          const y = yOffset + idx * lineHeight;
+          const yPos = yOffset + idx * lineHeight;
           const match = text.match(urlRegex);
           if (match) {
-            doc.text(text, xOffset, y, { link: match[0] });
+            // Draw text and make URL clickable
+            doc.text(text, xOffset, yPos, { link: match[0] });
           } else {
-            doc.text(text, xOffset, y);
+            doc.text(text, xOffset, yPos);
           }
         });
         doc.save('action-plan.pdf');
@@ -113,8 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // RESTART FORM
-  restartBtn.addEventListener('click', () => {
+  // RESTART BUTTON
+  restartBtn.addEventListener('click', function(e) {
+    e.preventDefault();
     window.location.reload();
   });
 });

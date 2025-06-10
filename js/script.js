@@ -2,9 +2,9 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
-  const xOffset    = textPosition && typeof textPosition.x === 'number' ? textPosition.x : 40;
-  const yOffset    = textPosition && typeof textPosition.y === 'number' ? textPosition.y : 100;
-  const lineHeight = textPosition && typeof textPosition.lineHeight === 'number' ? textPosition.lineHeight : 20;
+  const xOffset    = (textPosition && textPosition.x) || 40;
+  const yOffset    = (textPosition && textPosition.y) || 100;
+  const lineHeight = (textPosition && textPosition.lineHeight) || 20;
   const urlRegex   = /(https?:\/\/[^\s]+)/g;
 
   const formCont    = document.getElementById('form-container');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCont.classList.add('hidden');
   resCont.classList.add('hidden');
 
-  // BUILD FORM
+  // BUILD FORM FIELDS
   questions.forEach(q => {
     let wrapper;
     if (q.type === 'text') {
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // SHOW SPINNER
+    // TOGGLE VIEW: show spinner
     formCont.classList.add('hidden');
     resCont.classList.add('hidden');
     loadCont.classList.remove('hidden');
@@ -62,8 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // HIDE SPINNER, SHOW RESULTS
       loadCont.classList.add('hidden');
       resList.innerHTML = actions.map(a => {
-        const html = a.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
-        return `<li>${html}</li>`;
+        // Wrap URLs in anchor tags
+        const linked = a.replace(urlRegex, url => `<a href=\"${url}\" target=\"_blank\">${url}</a>`);
+        return `<li>${linked}</li>`;
       }).join('');
       resCont.classList.remove('hidden');
     }, 800);
@@ -86,12 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(blob);
       }))
       .then(dataUrl => {
+        // Draw background
         doc.addImage(
           dataUrl, 'PNG',
           0, 0,
           doc.internal.pageSize.getWidth(),
           doc.internal.pageSize.getHeight()
         );
+        // Overlay action items with clickable link in PDF
         Array.from(resList.querySelectorAll('li')).forEach((li, idx) => {
           const text = li.textContent;
           const y = yOffset + idx * lineHeight;
@@ -110,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // RESTART
+  // RESTART FORM
   restartBtn.addEventListener('click', () => {
     window.location.reload();
   });

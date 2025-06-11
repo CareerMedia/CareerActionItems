@@ -2,17 +2,13 @@
 window.CONFIG = {
   templateImageUrl: 'assets/background.png',
   textPosition: {
-    x: 370,         // X coordinate in pixels for PDF text
-    y: 1280,        // Y coordinate in pixels for PDF text
+    x: 370,         // X coordinate for PDF text
+    y: 1280,        // Y coordinate for PDF text
     lineHeight: 24, // Vertical spacing between lines
-    fontSize: 14    // Font size (in points) for PDF text
+    fontSize: 14    // Point size for PDF text
   },
   questions: [
-    {
-      id: 'name',
-      type: 'text',
-      label: 'Name'
-    },
+    { id: 'name', type: 'text', label: 'Name' },
     {
       id: 'experience',
       type: 'radio',

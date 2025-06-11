@@ -2,49 +2,67 @@
 
 window.generatePDF = function(config, actions) {
   const { templateImageUrl, textPosition } = config;
-  const x = textPosition.x, y = textPosition.y;
-  const lineHeight = textPosition.lineHeight, fontSize = textPosition.fontSize;
+  const x = textPosition.x || 40;
+  const y = textPosition.y || 100;
+  const lineHeight = textPosition.lineHeight || 20;
+  const fontSize = textPosition.fontSize || 12;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'px', format: 'a4' });
+
+  // Set font and color
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(fontSize);
   doc.setTextColor(0, 0, 0);
 
+  // Load and draw background, then overlay text
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function() {
-    doc.addImage(img, 'PNG', 0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight());
+    // Background
+    doc.addImage(img, 'PNG',
+      0, 0,
+      doc.internal.pageSize.getWidth(),
+      doc.internal.pageSize.getHeight()
+    );
 
+    // Overlay actions
     let cursorY = y;
     actions.forEach(text => {
       let cursorX = x;
-      let last = 0, m;
+      let lastIndex = 0, match;
       urlRegex.lastIndex = 0;
-      while ((m = urlRegex.exec(text)) !== null) {
-        if (m.index > last) {
-          const chunk = text.slice(last, m.index);
-          doc.text(chunk, cursorX, cursorY);
-          cursorX += doc.getTextWidth(chunk);
+      while ((match = urlRegex.exec(text)) !== null) {
+        // Prefix
+        if (match.index > lastIndex) {
+          const prefix = text.slice(lastIndex, match.index);
+          doc.text(prefix, cursorX, cursorY);
+          cursorX += doc.getTextWidth(prefix);
         }
-        const url = m[0];
+        // URL text
+        const url = match[0];
         doc.text(url, cursorX, cursorY);
-        doc.link(cursorX, cursorY - fontSize + 2, doc.getTextWidth(url), fontSize, { url });
+        doc.link(cursorX, cursorY - fontSize + 2,
+          doc.getTextWidth(url), fontSize,
+          { url }
+        );
         cursorX += doc.getTextWidth(url);
-        last = m.index + url.length;
+        lastIndex = match.index + url.length;
       }
-      if (last < text.length) {
-        const suffix = text.slice(last);
+      // Suffix
+      if (lastIndex < text.length) {
+        const suffix = text.slice(lastIndex);
         doc.text(suffix, cursorX, cursorY);
       }
       cursorY += lineHeight;
     });
 
+    // Save file
     doc.save('action-plan.pdf');
   };
   img.onerror = function() {
-    alert('Failed to load PDF background.');
+    alert('Failed to load PDF background image.');
   };
   img.src = templateImageUrl;
 };

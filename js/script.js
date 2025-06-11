@@ -15,13 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadBtn      = document.getElementById('download-btn');
   const restartBtn       = document.getElementById('restart-btn');
 
-  // --- Reusable Loading Screen Functions ---
-  window.showLoading = function() {
-    loadingContainer.style.display = 'flex';
-  };
-  window.hideLoading = function() {
-    loadingContainer.style.display = 'none';
-  };
+  window.showLoading = () => loadingContainer.style.display = 'flex';
+  window.hideLoading = () => loadingContainer.style.display = 'none';
 
   // INITIAL VISIBILITY
   formContainer.style.display    = 'block';
@@ -32,19 +27,11 @@ document.addEventListener('DOMContentLoaded', function() {
   questions.forEach(q => {
     let wrapper = document.createElement(q.type === 'text' ? 'div' : 'fieldset');
     if (q.type === 'text') {
-      wrapper.innerHTML = `
-        <label for="${q.id}">${q.label}</label>
-        <input type="text" id="${q.id}" name="${q.id}" required />
-      `;
+      wrapper.innerHTML = `<label for="${q.id}">${q.label}</label><input type="text" id="${q.id}" name="${q.id}" required />`;
     } else {
       let html = `<legend>${q.label}</legend>`;
       q.options.forEach(opt => {
-        html += `
-          <label>
-            <input type="radio" name="${q.id}" value="${opt.value}" required />
-            ${opt.label}
-          </label>
-        `;
+        html += `<label><input type="radio" name="${q.id}" value="${opt.value}" required /> ${opt.label}</label>`;
       });
       wrapper.innerHTML = html;
     }
@@ -69,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    formContainer.style.display    = 'none';
+    formContainer.style.display = 'none';
     resultsContainer.style.display = 'none';
     showLoading();
 
@@ -77,37 +64,13 @@ document.addEventListener('DOMContentLoaded', function() {
       hideLoading();
       resultsList.innerHTML = '';
       
-      // --- THIS IS THE CORRECTED LOGIC ---
-      // It now correctly parses the text and creates clickable <a> tags.
+      // --- THIS IS THE CORRECTED LOGIC FOR ON-PAGE LINKS ---
+      // This simpler method uses innerHTML to guarantee clickable links are created.
       actions.forEach(item => {
         const li = document.createElement('li');
         li.className = 'action-item';
-
-        // Reset regex index for each item
-        urlRegex.lastIndex = 0;
-        let lastIndex = 0;
-        let match;
-        
-        // Find all URLs in the string
-        while ((match = urlRegex.exec(item)) !== null) {
-          // Add any text that came before the link
-          if (match.index > lastIndex) {
-            li.appendChild(document.createTextNode(item.slice(lastIndex, match.index)));
-          }
-          // Create the clickable <a> tag
-          const a = document.createElement('a');
-          a.href = match[0];
-          a.target = '_blank'; // Open in new tab
-          a.textContent = match[0];
-          li.appendChild(a);
-          lastIndex = match.index + match[0].length;
-        }
-
-        // Add any remaining text after the last link
-        if (lastIndex < item.length) {
-          li.appendChild(document.createTextNode(item.slice(lastIndex)));
-        }
-
+        // Find URLs and wrap them in a clickable <a> tag
+        li.innerHTML = item.replace(urlRegex, '<a href="$&" target="_blank">$&</a>');
         resultsList.appendChild(li);
       });
       // --- END OF FIX ---
@@ -119,10 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 3) Download PDF
   downloadBtn.addEventListener('click', function() {
     showLoading();
-
-    const actions = Array.from(document.querySelectorAll('li.action-item'))
-      .map(li => li.textContent.trim());
-
+    const actions = Array.from(document.querySelectorAll('li.action-item')).map(li => li.textContent.trim());
     if (typeof window.generatePDF === 'function') {
       window.generatePDF(window.CONFIG, actions); 
     } else {
@@ -133,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // 4) Restart
-  restartBtn.addEventListener('click', function(e) {
+  restartBtn.addEventListener('click', (e) => {
     e.preventDefault();
     window.location.reload();
   });

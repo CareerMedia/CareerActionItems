@@ -4,24 +4,24 @@ document.addEventListener('DOMContentLoaded', function() {
   const { questions } = window.CONFIG;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  // Grab references
+  // Grab our elements
   const formContainer    = document.getElementById('form-container');
   const loadingContainer = document.getElementById('loading-container');
   const resultsContainer = document.getElementById('results-container');
-  const formEl           = document.getElementById('career-form');
+  const careerForm       = document.getElementById('career-form');
   const submitBtn        = document.getElementById('submit-btn');
   const resultsList      = document.getElementById('results-list');
   const downloadBtn      = document.getElementById('download-btn');
   const restartBtn       = document.getElementById('restart-btn');
 
-  // INITIAL LAYOUT
+  // INITIAL VISIBILITY
   formContainer.style.display    = 'block';
   loadingContainer.style.display = 'none';
   resultsContainer.style.display = 'none';
 
-  // Build the form dynamically from config
+  // 1) Build the form
   questions.forEach(q => {
-    const wrapper = document.createElement(q.type === 'text' ? 'div' : 'fieldset');
+    let wrapper = document.createElement(q.type === 'text' ? 'div' : 'fieldset');
     if (q.type === 'text') {
       wrapper.innerHTML = `
         <label for="${q.id}">${q.label}</label>
@@ -39,21 +39,19 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       wrapper.innerHTML = html;
     }
-    formEl.appendChild(wrapper);
+    careerForm.appendChild(wrapper);
   });
 
-  // When user clicks Generate
+  // 2) Generate Action Items
   submitBtn.addEventListener('click', function() {
-    // Gather action strings
-    const currentActions = [];
+    // Gather actions
+    const actions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
-        const sel = formEl.querySelector(`input[name="${q.id}"]:checked`);
+        const sel = careerForm.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          if (opt && Array.isArray(opt.actions)) {
-            currentActions.push(...opt.actions);
-          }
+          if (opt && Array.isArray(opt.actions)) actions.push(...opt.actions);
         }
       }
     });
@@ -63,13 +61,13 @@ document.addEventListener('DOMContentLoaded', function() {
     resultsContainer.style.display = 'none';
     loadingContainer.style.display = 'flex';
 
-    // After delay, render list
+    // After a moment, render list
     setTimeout(() => {
       loadingContainer.style.display = 'none';
       resultsList.innerHTML = '';
-      currentActions.forEach(item => {
+      actions.forEach(item => {
         const li = document.createElement('li');
-        li.classList.add('action-item');
+        li.className = 'action-item';
         let last = 0, m;
         urlRegex.lastIndex = 0;
         while ((m = urlRegex.exec(item)) !== null) {
@@ -92,21 +90,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 800);
   });
 
-  // When user clicks Download PDF
+  // 3) Download PDF
   downloadBtn.addEventListener('click', function() {
-    // Collect the exact action texts
+    // Pull exactly what’s on the page
     const actions = Array.from(document.querySelectorAll('li.action-item'))
       .map(li => li.textContent.trim());
 
-    // Delegate to pdfGenerator
+    // Call the PDF generator
     if (typeof window.generatePDF === 'function') {
       window.generatePDF(window.CONFIG, actions);
     } else {
-      alert('PDF generator not found.');
+      console.error('generatePDF not defined');
+      alert('PDF generator not available.');
     }
   });
 
-  // Restart button
+  // 4) Restart
   restartBtn.addEventListener('click', function(e) {
     e.preventDefault();
     window.location.reload();

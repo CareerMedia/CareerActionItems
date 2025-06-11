@@ -10,7 +10,7 @@ window.CONFIG = {
   // The Y coordinate MUST be less than ~800 to be visible.
   textPosition: {
     x: 60,          // Distance from the left edge (e.g., 60)
-    y: 270,         // Distance from the top edge (e.g., 150)
+    y: 254,         // Distance from the top edge (e.g., 150)
     lineHeight: 22, // Vertical spacing between lines
     fontSize: 12    // Point size for PDF text
   },

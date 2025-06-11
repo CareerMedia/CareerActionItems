@@ -2,17 +2,15 @@
 
 // Editable question + logic config
 window.CONFIG = {
-  // IMPORTANT: Replace this with a valid, publicly accessible URL to your background image.
-  // The original 'assets/background.png' will only work if your server is configured correctly.
-  // This example URL is for testing and is known to work.
-  templateImageUrl: 'https://i.imgur.com/b59R0N1.png',
+  // IMPORTANT: Replace this with the final URL to your background image.
+  templateImageUrl: 'assets/background.png',
 
+  // --- THIS IS THE CRITICAL FIX ---
+  // A standard A4 page is ~595px wide by ~842px tall.
+  // The Y coordinate MUST be less than ~800 to be visible.
   textPosition: {
-    // A standard A4 page is ~595px wide by ~842px tall.
-    // The original Y coordinate of 1280 was placing the text far off the bottom of the page.
-    // These new coordinates place the text correctly on the page.
-    x: 60,          // X coordinate (distance from left) for PDF text
-    y: 150,         // Y coordinate (distance from top) for the first line of text
+    x: 60,          // Distance from the left edge (e.g., 60)
+    y: 150,         // Distance from the top edge (e.g., 150)
     lineHeight: 22, // Vertical spacing between lines
     fontSize: 12    // Point size for PDF text
   },

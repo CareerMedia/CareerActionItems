@@ -2,15 +2,11 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
-  const pos = {
-    x:         textPosition.x        || 370,
-    y:         textPosition.y        || 1280,
-    lineHeight:textPosition.lineHeight || 24,
-    fontSize:  textPosition.fontSize   || 12
-  };
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const xOffset    = (textPosition && textPosition.x) || 40;
+  const yOffset    = (textPosition && textPosition.y) || 100;
+  const lineHeight = (textPosition && textPosition.lineHeight) || 20;
+  const urlRegex   = /(https?:\/\/[^\s]+)/g;
 
-  // References to key DOM elements
   const formContainer    = document.getElementById('form-container');
   const loadingContainer = document.getElementById('loading-container');
   const resultsContainer = document.getElementById('results-container');
@@ -20,82 +16,57 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadBtn      = document.getElementById('download-btn');
   const restartBtn       = document.getElementById('restart-btn');
 
-  // This array holds exactly what we show on the page.
-  let currentActions = [];
-
   // INITIAL STATE
   formContainer.style.display    = 'block';
   loadingContainer.style.display = 'none';
   resultsContainer.style.display = 'none';
 
-  // BUILD FORM
+  // BUILD FORM FIELDS
   questions.forEach(q => {
-    const wrapper = document.createElement(q.type === 'text' ? 'div' : 'fieldset');
+    let wrapper;
     if (q.type === 'text') {
+      wrapper = document.createElement('div');
       wrapper.innerHTML = `
         <label for="${q.id}">${q.label}</label>
         <input type="text" id="${q.id}" name="${q.id}" required />
       `;
-    } else {
-      let html = `<legend>${q.label}</legend>`;
-      q.options.forEach(opt => {
-        html += `
-          <label>
-            <input type="radio" name="${q.id}" value="${opt.value}" required />
-            ${opt.label}
-          </label>
-        `;
-      });
-      wrapper.innerHTML = html;
+    } else if (q.type === 'radio') {
+      wrapper = document.createElement('fieldset');
+      wrapper.innerHTML = `<legend>${q.label}</legend>` +
+        q.options.map(opt =>
+          `<label><input type="radio" name="${q.id}" value="${opt.value}" required /> ${opt.label}</label>`
+        ).join('');
     }
     formEl.appendChild(wrapper);
   });
 
   // GENERATE ACTION ITEMS
   submitBtn.addEventListener('click', function() {
-    // Rebuild the array
-    currentActions = [];
+    const actions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
         const sel = formEl.querySelector(`input[name="${q.id}"]:checked`);
         if (sel) {
           const opt = q.options.find(o => o.value === sel.value);
-          if (opt && Array.isArray(opt.actions)) {
-            currentActions.push(...opt.actions);
-          }
+          if (opt && opt.actions) actions.push(...opt.actions);
         }
       }
     });
 
-    // Show spinner
+    // SHOW SPINNER
     formContainer.style.display    = 'none';
     resultsContainer.style.display = 'none';
     loadingContainer.style.display = 'flex';
 
-    // After delay, render the HTML list from the same array
-    setTimeout(() => {
+    setTimeout(function() {
+      // HIDE SPINNER, SHOW RESULTS
       loadingContainer.style.display = 'none';
-      resultsList.innerHTML = '';
-      currentActions.forEach(item => {
-        const li = document.createElement('li');
-        let last = 0, m;
-        urlRegex.lastIndex = 0;
-        while ((m = urlRegex.exec(item)) !== null) {
-          if (m.index > last) {
-            li.appendChild(document.createTextNode(item.slice(last, m.index)));
-          }
-          const a = document.createElement('a');
-          a.href = m[0];
-          a.target = '_blank';
-          a.textContent = m[0];
-          li.appendChild(a);
-          last = m.index + m[0].length;
-        }
-        if (last < item.length) {
-          li.appendChild(document.createTextNode(item.slice(last)));
-        }
-        resultsList.appendChild(li);
-      });
+      resultsList.innerHTML = actions.map(item => {
+        const html = item.replace(urlRegex, function(url) {
+          return `<a href="${url}" target="_blank">${url}</a>`;
+        });
+        return `<li>${html}</li>`;
+      }).join('');
       resultsContainer.style.display = 'block';
     }, 800);
   });
@@ -109,16 +80,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
-      // Draw the PDF background
-      doc.addImage(img, 'PNG', 
-        0, 0, 
-        doc.internal.pageSize.getWidth(), 
-        doc.internal.pageSize.getHeight()
-      );
+      // Draw template
+      doc.addImage(img, 'PNG', 0, 0,
+        doc.internal.pageSize.getWidth(),
+        doc.internal.pageSize.getHeight());
 
-      // Overlay every action from our array
+      // Pull items from DOM instead of array
+      const items = Array.from(resultsList.querySelectorAll('li')).map(li => li.textContent.trim());
       let y = pos.y;
-      currentActions.forEach(text => {
+      items.forEach(text => {
         let x = pos.x;
         let last = 0, m;
         urlRegex.lastIndex = 0;
@@ -129,13 +99,11 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text(chunk, x, y);
             x += doc.getTextWidth(chunk);
           }
-          // link text
+          // link
           const url = m[0];
           doc.text(url, x, y);
-          doc.link(
-            x, y - pos.fontSize + 2,
-            doc.getTextWidth(url),
-            pos.fontSize,
+          doc.link(x, y - pos.fontSize + 2,
+            doc.getTextWidth(url), pos.fontSize,
             { url }
           );
           x += doc.getTextWidth(url);
@@ -152,13 +120,16 @@ document.addEventListener('DOMContentLoaded', function() {
       doc.save('action-plan.pdf');
     };
     img.onerror = function() {
-      alert('Failed to load PDF template. Check your URL.');
+      alert('Failed to load PDF background.');
     };
     img.src = templateImageUrl;
   });
 
-  // RESTART
+  // RESTART BUTTON
   restartBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    window.location.reload();
+  });('click', function(e) {
     e.preventDefault();
     window.location.reload();
   });

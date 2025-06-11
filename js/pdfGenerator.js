@@ -1,71 +1,74 @@
 // File: js/pdfGenerator.js
 
 window.generatePDF = function(config, actions) {
-  const { templateImageUrl, textPosition } = config;
-  const x          = textPosition.x        || 40;
-  const y          = textPosition.y        || 100;
+  // Ensure config and its properties are defined
+  const safeConfig = config || {};
+  const textPosition = safeConfig.textPosition || {};
+  const templateImageUrl = safeConfig.templateImageUrl;
+
+  if (!templateImageUrl) {
+    console.error("PDF generation failed: templateImageUrl is missing.");
+    alert("Sorry, the PDF can't be generated because the template image is missing.");
+    return;
+  }
+
+  const x = textPosition.x || 40;
+  const y = textPosition.y || 100;
   const lineHeight = textPosition.lineHeight || 20;
-  const fontSize   = textPosition.fontSize   || 12;
-  const urlRegex   = /(https?:\/\/[^\s]+)/g;
+  const fontSize = textPosition.fontSize || 12;
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'px', format: 'a4' });
 
-  // Set up black text
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(fontSize);
-  doc.setTextColor(0, 0, 0);
-
-  // Load background and then overlay text
+  // Load background image
   const img = new Image();
   img.crossOrigin = 'anonymous';
-  img.onload = function() {
-    // Draw full-page template
-    doc.addImage(img, 'PNG',
-      0, 0,
-      doc.internal.pageSize.getWidth(),
-      doc.internal.pageSize.getHeight()
-    );
 
-    // Overlay each action, preserving links
-    let cursorY = y;
+  // This function will run AFTER the image has loaded
+  img.onload = function() {
+    // Draw the background image to fit the page
+    doc.addImage(img, 'PNG', 0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight());
+
+    // Set font style for the text
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSize);
+    doc.setTextColor(0, 0, 0); // Black text
+
+    // Add each action item as a new line of text
+    let currentY = y;
     actions.forEach(text => {
-      let cursorX = x;
-      let lastIndex = 0, match;
-      urlRegex.lastIndex = 0;
-      while ((match = urlRegex.exec(text)) !== null) {
-        // prefix
-        if (match.index > lastIndex) {
-          const chunk = text.slice(lastIndex, match.index);
-          doc.text(chunk, cursorX, cursorY);
-          cursorX += doc.getTextWidth(chunk);
-        }
-        // link
-        const url = match[0];
-        doc.text(url, cursorX, cursorY);
-        doc.link(
-          cursorX,
-          cursorY - fontSize + 2,
-          doc.getTextWidth(url),
-          fontSize,
-          { url }
-        );
-        cursorX += doc.getTextWidth(url);
-        lastIndex = match.index + url.length;
+      // The `splitTextToSize` function handles line breaks automatically
+      const lines = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - (x * 2));
+      
+      // Add text and links line by line
+      doc.text(lines, x, currentY);
+      
+      // A simplified approach to adding links to the whole text block
+      // Note: This creates a single link box around the entire text block if a URL is present.
+      // For multiple, distinct links within one action item, the original regex approach is better,
+      // but this is a simpler, more robust starting point.
+      const match = text.match(urlRegex);
+      if (match) {
+          match.forEach(url => {
+              // This is a simplified linking; for precise link placement, more complex logic is needed.
+              doc.link(x, currentY - fontSize, doc.internal.pageSize.getWidth() - (x*2), lines.length * lineHeight, { url });
+          });
       }
-      // suffix
-      if (lastIndex < text.length) {
-        const suffix = text.slice(lastIndex);
-        doc.text(suffix, cursorX, cursorY);
-      }
-      cursorY += lineHeight;
+
+      currentY += (lines.length * lineHeight);
     });
 
-    // Finally save
+    // Save the PDF only after everything has been added
     doc.save('action-plan.pdf');
   };
+
+  // This function will run if the image fails to load
   img.onerror = function() {
-    alert('Unable to load PDF background image.');
+    console.error("Error loading PDF background image from:", templateImageUrl);
+    alert('Unable to load the PDF background image. Please check the template URL.');
   };
+
+  // Start loading the image
   img.src = templateImageUrl;
 };

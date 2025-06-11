@@ -14,9 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadBtn      = document.getElementById('download-btn');
   const restartBtn       = document.getElementById('restart-btn');
 
+  // --- Reusable Loading Screen Functions ---
+  window.showLoading = function() {
+    loadingContainer.style.display = 'flex';
+  };
+  window.hideLoading = function() {
+    loadingContainer.style.display = 'none';
+  };
+
   // INITIAL VISIBILITY
   formContainer.style.display    = 'block';
-  loadingContainer.style.display = 'none';
+  hideLoading();
   resultsContainer.style.display = 'none';
 
   // 1) Build the form
@@ -44,7 +52,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 2) Generate Action Items
   submitBtn.addEventListener('click', function() {
-    // Gather actions
+    if (!careerForm.checkValidity()) {
+      careerForm.reportValidity();
+      return;
+    }
+
     const actions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
@@ -59,31 +71,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show spinner
     formContainer.style.display    = 'none';
     resultsContainer.style.display = 'none';
-    loadingContainer.style.display = 'flex';
+    showLoading();
 
-    // After a moment, render list
     setTimeout(() => {
-      loadingContainer.style.display = 'none';
+      hideLoading();
       resultsList.innerHTML = '';
       actions.forEach(item => {
         const li = document.createElement('li');
         li.className = 'action-item';
-        let last = 0, m;
-        urlRegex.lastIndex = 0;
-        while ((m = urlRegex.exec(item)) !== null) {
-          if (m.index > last) {
-            li.appendChild(document.createTextNode(item.slice(last, m.index)));
-          }
-          const a = document.createElement('a');
-          a.href = m[0];
-          a.target = '_blank';
-          a.textContent = m[0];
-          li.appendChild(a);
-          last = m.index + m[0].length;
-        }
-        if (last < item.length) {
-          li.appendChild(document.createTextNode(item.slice(last)));
-        }
+        // Simplified rendering; textContent is sufficient for the PDF generator
+        li.textContent = item;
         resultsList.appendChild(li);
       });
       resultsContainer.style.display = 'block';
@@ -92,16 +89,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 3) Download PDF
   downloadBtn.addEventListener('click', function() {
-    // Pull exactly what’s on the page
+    showLoading(); // Show spinner before starting PDF generation
+
     const actions = Array.from(document.querySelectorAll('li.action-item'))
       .map(li => li.textContent.trim());
 
-    // Call the PDF generator
     if (typeof window.generatePDF === 'function') {
       window.generatePDF(window.CONFIG, actions);
     } else {
       console.error('generatePDF not defined');
       alert('PDF generator not available.');
+      hideLoading(); // Hide spinner if function is missing
     }
   });
 

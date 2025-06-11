@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   const { questions } = window.CONFIG;
+  // This regex is used to find URLs to make them clickable
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   // Grab our elements
@@ -68,7 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    // Show spinner
     formContainer.style.display    = 'none';
     resultsContainer.style.display = 'none';
     showLoading();
@@ -76,30 +76,59 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
       hideLoading();
       resultsList.innerHTML = '';
+      
+      // --- THIS IS THE CORRECTED LOGIC ---
+      // It now correctly parses the text and creates clickable <a> tags.
       actions.forEach(item => {
         const li = document.createElement('li');
         li.className = 'action-item';
-        // Simplified rendering; textContent is sufficient for the PDF generator
-        li.textContent = item;
+
+        // Reset regex index for each item
+        urlRegex.lastIndex = 0;
+        let lastIndex = 0;
+        let match;
+        
+        // Find all URLs in the string
+        while ((match = urlRegex.exec(item)) !== null) {
+          // Add any text that came before the link
+          if (match.index > lastIndex) {
+            li.appendChild(document.createTextNode(item.slice(lastIndex, match.index)));
+          }
+          // Create the clickable <a> tag
+          const a = document.createElement('a');
+          a.href = match[0];
+          a.target = '_blank'; // Open in new tab
+          a.textContent = match[0];
+          li.appendChild(a);
+          lastIndex = match.index + match[0].length;
+        }
+
+        // Add any remaining text after the last link
+        if (lastIndex < item.length) {
+          li.appendChild(document.createTextNode(item.slice(lastIndex)));
+        }
+
         resultsList.appendChild(li);
       });
+      // --- END OF FIX ---
+
       resultsContainer.style.display = 'block';
     }, 800);
   });
 
   // 3) Download PDF
   downloadBtn.addEventListener('click', function() {
-    showLoading(); // Show spinner before starting PDF generation
+    showLoading();
 
     const actions = Array.from(document.querySelectorAll('li.action-item'))
       .map(li => li.textContent.trim());
 
     if (typeof window.generatePDF === 'function') {
-      window.generatePDF(window.CONFIG, actions);
+      window.generatePDF(window.CONFIG, actions); 
     } else {
       console.error('generatePDF not defined');
       alert('PDF generator not available.');
-      hideLoading(); // Hide spinner if function is missing
+      hideLoading();
     }
   });
 

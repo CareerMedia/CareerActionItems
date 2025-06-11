@@ -3,9 +3,9 @@
 document.addEventListener('DOMContentLoaded', function() {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
   const pos = {
-    x:         textPosition.x        || 40,
-    y:         textPosition.y        || 100,
-    lineHeight:textPosition.lineHeight || 20,
+    x:         textPosition.x        || 370,
+    y:         textPosition.y        || 1280,
+    lineHeight:textPosition.lineHeight || 24,
     fontSize:  textPosition.fontSize   || 12
   };
   const urlRegex = /(https?:\/\/[^\s]+)/g;

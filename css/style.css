@@ -27,7 +27,8 @@ body {
 }
 
 .container {
-  max-width: 350px;
+  width: 90%;
+  max-width: 600px;
   background: linear-gradient(0deg, #fff 0%, #f4f7fb 100%);
   border-radius: 40px;
   padding: 25px 35px;
@@ -37,6 +38,7 @@ body {
   position: relative;
   overflow: hidden;
 }
+
 
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -168,8 +170,25 @@ fieldset input[type=radio]:checked + span {
   margin-bottom: 15px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Ensure radio inputs are visible and styled */
+input[type="radio"] {
+  opacity: 1 !important;
+  position: static;
+  width: auto;
+  height: auto;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+fieldset label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
 }
 
 #results-list {

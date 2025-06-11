@@ -13,37 +13,33 @@ window.generatePDF = function(config, actions) {
   const doc = new jsPDF({ unit: 'px', format: 'a4' });
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // --- SAFETY NET ---
-  // Check for invalid coordinates from the config file.
+  // --- DIAGNOSTIC AND CONTROL FIX ---
+  // This will log the exact coordinates being used to the developer console.
+  // If these values don't match your config.js file, your browser is caching the old file.
+  console.log('PDF Generator starting with textPosition:', textPosition);
+  
   if (textPosition.y > pageHeight) {
     alert(`Configuration Error: The starting Y coordinate (${textPosition.y}) is outside the page height (${Math.round(pageHeight)}). Please correct your config.js file.`);
     if (window.hideLoading) window.hideLoading();
-    return; // Stop execution
+    return;
   }
   
-  // Also check if there are any actions to add
   if (!actions || actions.length === 0) {
     alert('There are no action items to add to the PDF.');
     if (window.hideLoading) window.hideLoading();
-    return; // Stop execution
+    return;
   }
-
 
   const addContentAndSave = (loadedImage) => {
     try {
       const pageWidth = doc.internal.pageSize.getWidth();
-      
-      if (loadedImage) {
-        doc.addImage(loadedImage, 'PNG', 0, 0, pageWidth, pageHeight);
-      } else {
-        console.warn('Background image could not be loaded. Proceeding with a blank background.');
-      }
+      if (loadedImage) doc.addImage(loadedImage, 'PNG', 0, 0, pageWidth, pageHeight);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(textPosition.fontSize);
       doc.setTextColor(0, 0, 0);
 
-      let cursorY = textPosition.y;
+      let cursorY = textPosition.y; // Uses the value from config
       const pageMargin = textPosition.x;
 
       actions.forEach(text => {
@@ -53,13 +49,18 @@ window.generatePDF = function(config, actions) {
 
         if (cursorY + textBlockHeight > pageHeight - pageMargin) {
           doc.addPage();
-          if (loadedImage) {
-            doc.addImage(loadedImage, 'PNG', 0, 0, pageWidth, pageHeight);
-          }
-          cursorY = textPosition.y;
+          if (loadedImage) doc.addImage(loadedImage, 'PNG', 0, 0, pageWidth, pageHeight);
+          cursorY = textPosition.y; // Resets to the value from config
         }
         
         doc.text(lines, textPosition.x, cursorY);
+
+        const urlMatch = text.match(/(https?:\/\/[^\s]+)/);
+        if (urlMatch) {
+          const linkY = cursorY - textPosition.fontSize;
+          doc.link(textPosition.x, linkY, maxWidth, textBlockHeight, { url: urlMatch[0] });
+        }
+        
         cursorY += textBlockHeight + (textPosition.lineHeight / 2);
       });
 
@@ -75,10 +76,8 @@ window.generatePDF = function(config, actions) {
 
   const img = new Image();
   img.crossOrigin = 'Anonymous';
-  img.onload = function() {
-    addContentAndSave(this); 
-  };
-  img.onerror = function() {
+  img.onload = () => addContentAndSave(img);
+  img.onerror = () => {
     console.error(`Failed to load template image from: ${templateImageUrl}.`);
     alert('Warning: The PDF background image could not be loaded. Your PDF will be generated without it.');
     addContentAndSave(null);

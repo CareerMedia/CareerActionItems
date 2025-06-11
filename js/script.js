@@ -3,17 +3,14 @@
 document.addEventListener('DOMContentLoaded', function() {
   const { questions, templateImageUrl, textPosition } = window.CONFIG;
   const pos = {
-    x: textPosition.x || 40,
-    y: textPosition.y || 100,
-    lineHeight: textPosition.lineHeight || 20,
-    fontSize: textPosition.fontSize || 12
+    x:         textPosition.x        || 40,
+    y:         textPosition.y        || 100,
+    lineHeight:textPosition.lineHeight || 20,
+    fontSize:  textPosition.fontSize   || 12
   };
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  // State
-  let currentActions = [];
-
-  // Element refs
+  // References to key DOM elements
   const formContainer    = document.getElementById('form-container');
   const loadingContainer = document.getElementById('loading-container');
   const resultsContainer = document.getElementById('results-container');
@@ -23,21 +20,23 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadBtn      = document.getElementById('download-btn');
   const restartBtn       = document.getElementById('restart-btn');
 
-  // INITIAL VISIBILITY
+  // This array holds exactly what we show on the page.
+  let currentActions = [];
+
+  // INITIAL STATE
   formContainer.style.display    = 'block';
   loadingContainer.style.display = 'none';
   resultsContainer.style.display = 'none';
 
   // BUILD FORM
   questions.forEach(q => {
-    let wrapper = document.createElement('div');
+    const wrapper = document.createElement(q.type === 'text' ? 'div' : 'fieldset');
     if (q.type === 'text') {
       wrapper.innerHTML = `
         <label for="${q.id}">${q.label}</label>
         <input type="text" id="${q.id}" name="${q.id}" required />
       `;
     } else {
-      wrapper = document.createElement('fieldset');
       let html = `<legend>${q.label}</legend>`;
       q.options.forEach(opt => {
         html += `
@@ -54,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // GENERATE ACTION ITEMS
   submitBtn.addEventListener('click', function() {
-    // Collect actions
+    // Rebuild the array
     currentActions = [];
     questions.forEach(q => {
       if (q.type === 'radio') {
@@ -73,30 +72,27 @@ document.addEventListener('DOMContentLoaded', function() {
     resultsContainer.style.display = 'none';
     loadingContainer.style.display = 'flex';
 
-    // After brief delay, show results
+    // After delay, render the HTML list from the same array
     setTimeout(() => {
       loadingContainer.style.display = 'none';
-      // Populate HTML list
       resultsList.innerHTML = '';
       currentActions.forEach(item => {
         const li = document.createElement('li');
-        let lastIndex = 0, match;
-        while ((match = urlRegex.exec(item)) !== null) {
-          // text before link
-          if (match.index > lastIndex) {
-            li.appendChild(document.createTextNode(item.slice(lastIndex, match.index)));
+        let last = 0, m;
+        urlRegex.lastIndex = 0;
+        while ((m = urlRegex.exec(item)) !== null) {
+          if (m.index > last) {
+            li.appendChild(document.createTextNode(item.slice(last, m.index)));
           }
-          // link
           const a = document.createElement('a');
-          a.href = match[0];
+          a.href = m[0];
           a.target = '_blank';
-          a.textContent = match[0];
+          a.textContent = m[0];
           li.appendChild(a);
-          lastIndex = match.index + match[0].length;
+          last = m.index + m[0].length;
         }
-        // remaining text
-        if (lastIndex < item.length) {
-          li.appendChild(document.createTextNode(item.slice(lastIndex)));
+        if (last < item.length) {
+          li.appendChild(document.createTextNode(item.slice(last)));
         }
         resultsList.appendChild(li);
       });
@@ -113,41 +109,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
-      // Draw background template
-      doc.addImage(img, 'PNG', 0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight());
+      // Draw the PDF background
+      doc.addImage(img, 'PNG', 
+        0, 0, 
+        doc.internal.pageSize.getWidth(), 
+        doc.internal.pageSize.getHeight()
+      );
 
-      // Overlay each action with clickable PDF link
-      let yPos = pos.y;
+      // Overlay every action from our array
+      let y = pos.y;
       currentActions.forEach(text => {
-        let xPos = pos.x;
-        let lastIndex = 0, match;
+        let x = pos.x;
+        let last = 0, m;
         urlRegex.lastIndex = 0;
-        while ((match = urlRegex.exec(text)) !== null) {
-          // prefix
-          if (match.index > lastIndex) {
-            const chunk = text.slice(lastIndex, match.index);
-            doc.text(chunk, xPos, yPos);
-            xPos += doc.getTextWidth(chunk);
+        while ((m = urlRegex.exec(text)) !== null) {
+          // prefix text
+          if (m.index > last) {
+            const chunk = text.slice(last, m.index);
+            doc.text(chunk, x, y);
+            x += doc.getTextWidth(chunk);
           }
-          // link
-          const url = match[0];
-          doc.text(url, xPos, yPos);
-          doc.link(xPos, yPos - pos.fontSize + 2, doc.getTextWidth(url), pos.fontSize, { url });
-          xPos += doc.getTextWidth(url);
-          lastIndex = match.index + url.length;
+          // link text
+          const url = m[0];
+          doc.text(url, x, y);
+          doc.link(
+            x, y - pos.fontSize + 2,
+            doc.getTextWidth(url),
+            pos.fontSize,
+            { url }
+          );
+          x += doc.getTextWidth(url);
+          last = m.index + url.length;
         }
         // suffix
-        if (lastIndex < text.length) {
-          const chunk = text.slice(lastIndex);
-          doc.text(chunk, xPos, yPos);
+        if (last < text.length) {
+          const suffix = text.slice(last);
+          doc.text(suffix, x, y);
         }
-        yPos += pos.lineHeight;
+        y += pos.lineHeight;
       });
 
       doc.save('action-plan.pdf');
     };
     img.onerror = function() {
-      alert('Failed to load PDF background.');
+      alert('Failed to load PDF template. Check your URL.');
     };
     img.src = templateImageUrl;
   });

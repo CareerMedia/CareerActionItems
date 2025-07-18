@@ -2,12 +2,17 @@
 
 // Editable question + logic config
 window.CONFIG = {
+  // IMPORTANT: Replace this with the final URL to your background image.
   templateImageUrl: 'assets/background.png',
+
+  // --- THIS IS THE CRITICAL FIX ---
+  // A standard A4 page is ~595px wide by ~842px tall.
+  // The Y coordinate MUST be less than ~800 to be visible.
   textPosition: {
-    x: 370,         // X coordinate for PDF text
-    y: 1280,        // Y coordinate for PDF text
-    lineHeight: 24, // Vertical spacing between lines
-    fontSize: 14    // Point size for PDF text
+    x: 60,          // Distance from the left edge (e.g., 60)
+    y: 254,         // Distance from the top edge (e.g., 150)
+    lineHeight: 22, // Vertical spacing between lines
+    fontSize: 12    // Point size for PDF text
   },
   questions: [
     {
